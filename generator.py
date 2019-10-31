@@ -16,7 +16,7 @@ from jinja2 import FileSystemLoader, Environment
 import git # type:ignore
 
 OUTPUT_FILE_TYPE = "yaml"
-PACKAGE_FILE_NAME = "package.json"
+PACKAGE_FILE_NAME = "homectl.json"
 
 DEPENDENCIES = {
     'dhall-kubernetes': 'https://github.com/dhall-lang/dhall-kubernetes.git',
