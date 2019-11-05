@@ -7,5 +7,8 @@ setup(
   entry_points='''
     [console_scripts]
     homectl=home.control:cli
-  '''
+  ''',
+  package_data={
+    '': ['resource_creation.jinja']
+  }
 )

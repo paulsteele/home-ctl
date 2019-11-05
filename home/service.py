@@ -8,7 +8,8 @@ import subprocess
 import json
 import re
 from typing import List, Tuple
-from jinja2 import FileSystemLoader, Environment
+from jinja2 import PackageLoader, Environment
+from pkg_resources import resource_filename
 
 OUTPUT_FILE_TYPE = "yaml"
 PACKAGE_FILE_NAME = "homectl.json"
@@ -43,8 +44,8 @@ class Service:
     if not resource_type:
       return False
 
-    template_loader = FileSystemLoader(searchpath="./templates")
-    template_env = Environment(loader=template_loader)
+    package_loader = PackageLoader('home', '')
+    template_env = Environment(loader=package_loader)
     dhall_input = template_env.get_template('resource_creation.jinja')
     rendered_dhall_input = dhall_input.render(
       values=f"./{self.path}/{self.dhall['source']}",

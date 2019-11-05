@@ -14,7 +14,12 @@ DEPENDENCIES = {
     'prelude': 'https://github.com/dhall-lang/dhall-lang.git'
 }
 
-SERVICE_ARGUMENT = click.argument('services', nargs=-1, type=click.Path(exists=True, file_okay=False))
+SERVICE_ARGUMENT = click.argument(
+  'services',
+  nargs=-1,
+  type=click.Path(exists=True, file_okay=False),
+  required=True
+)
 
 @click.group()
 def cli():
@@ -41,10 +46,10 @@ def init():
 @cli.command()
 @SERVICE_ARGUMENT
 @click.option('--secrets', is_flag=True, help='generates secrets')
-def generate(services, generate_secrets):
+def generate(services, secrets):
   '''generates code needed for deploying a service'''
   for service_name in services:
-    Service(service_name).generate(generate_secrets=generate_secrets)
+    Service(service_name).generate(generate_secrets=secrets)
 
 @cli.command()
 @SERVICE_ARGUMENT
