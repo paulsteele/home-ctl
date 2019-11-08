@@ -45,11 +45,10 @@ def init():
 
 @cli.command()
 @SERVICE_ARGUMENT
-@click.option('--secrets', is_flag=True, help='generates secrets')
-def generate(services, secrets):
+def generate(services):
   '''generates code needed for deploying a service'''
   for service_name in services:
-    Service(service_name).generate(generate_secrets=secrets)
+    Service(service_name).generate()
 
 @cli.command()
 @SERVICE_ARGUMENT

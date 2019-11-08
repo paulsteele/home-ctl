@@ -9,7 +9,6 @@ import json
 import re
 from typing import List, Tuple
 from jinja2 import PackageLoader, Environment
-from pkg_resources import resource_filename
 
 OUTPUT_FILE_TYPE = "yaml"
 PACKAGE_FILE_NAME = "homectl.json"
@@ -38,7 +37,7 @@ class Service:
 
     return bool(self.dhall[key])
 
-  def _run_dhall(self, resource: str, secrets: List[Tuple[str, str]] = None) -> bool:
+  def _run_dhall(self, resource: str) -> bool:
     resource_type = self._get_resource_type(resource)
 
     if not resource_type:
@@ -50,8 +49,7 @@ class Service:
     rendered_dhall_input = dhall_input.render(
       values=f"./{self.path}/{self.dhall['source']}",
       resource_type=resource_type,
-      resource=resource,
-      secrets=secrets
+      resource=resource
     )
 
     result = subprocess.run(
@@ -101,27 +99,6 @@ class Service:
 
     for resource in self.dhall['resources']:
       status = self._run_dhall(resource) and status
-
-    return status
-
-  def _generate_secret(self) -> bool:
-    print("Dhall Secrets:")
-
-    status = True
-
-    if not self._check_dhall_validity('secrets'):
-      print(f"WARNING: no secrets specified for {self.path}")
-      return True
-
-    for resource in self.dhall['secrets']:
-      secret_keys = self.dhall['secrets'][resource]
-
-
-      secrets = []
-      for secret_key in secret_keys:
-        secret_value = input(f"Enter value for {secret_key}:\n")
-        secrets.append((secret_key, secret_value))
-      status = self._run_dhall(resource, secrets)
 
     return status
 
@@ -207,14 +184,11 @@ class Service:
 
     return status
 
-  def generate(self, generate_secrets=False) -> bool:
+  def generate(self) -> bool:
     '''Generates all resources defined in the service'''
     status = True
 
     print(f"Creating Resources for {self.path}:")
-
-    if generate_secrets:
-      status = self._generate_secret() and status
 
     if self.dhall:
       status = self._generate_dhall() and status
