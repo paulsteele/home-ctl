@@ -53,7 +53,7 @@ class Service:
     )
 
     result = subprocess.run(
-      ["dhall-to-yaml", "--omitNull", "--documents"],
+      ["dhall-to-yaml", "--omitEmpty", "--documents"],
       capture_output=True,
       text=True,
       input=rendered_dhall_input
