@@ -1,4 +1,4 @@
 click==7.0
 gitpython==3.0.4
-jinja2==2.10.3
+jinja2==2.11.1
 setuptools==41.6.0
