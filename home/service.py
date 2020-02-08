@@ -8,7 +8,6 @@ import subprocess
 import json
 import re
 from typing import List, Tuple
-from jinja2 import PackageLoader, Environment
 
 OUTPUT_FILE_TYPE = "yaml"
 PACKAGE_FILE_NAME = "homectl.json"
@@ -19,94 +18,39 @@ class Service:
   path: str
 
   def __init__(self, path):
-    try:
-      with open(f"{path}/{PACKAGE_FILE_NAME}") as json_data:
-        package = json.load(json_data)
-    except FileNotFoundError:
-      print(f"Could not find {PACKAGE_FILE_NAME} in {path}")
-      return
-
     self.path = path
+    self.dhall = os.path.isfile(f"{self.path}/values.dhall")
+    self.helm = os.path.isfile(f"{self.path}/helm.yaml")
 
-    self.dhall = package['dhall'] if 'dhall' in package else None
-    self.helm = package['helm'] if 'helm' in package else None
-
-  def _check_dhall_validity(self, key) -> bool:
-    if key not in self.dhall:
-      return False
-
-    return bool(self.dhall[key])
-
-  def _run_dhall(self, resource: str) -> bool:
-    resource_type = self._get_resource_type(resource)
-
-    if not resource_type:
-      return False
-
-    package_loader = PackageLoader('home', '')
-    template_env = Environment(loader=package_loader)
-    dhall_input = template_env.get_template('resource_creation.jinja')
-    rendered_dhall_input = dhall_input.render(
-      values=f"./{self.path}/{self.dhall['source']}",
-      resource_type=resource_type,
-      resource=resource
-    )
+  def _generate_dhall(self) -> bool:
+    print("Dhall Resources:")
 
     result = subprocess.run(
       ["dhall-to-yaml", "--omitEmpty", "--documents"],
       capture_output=True,
       text=True,
-      input=rendered_dhall_input
+      input=f"./{self.path}/values.dhall"
     )
 
     if result.returncode != 0:
-      print(f"{resource} ✗")
+      print(f"{self.path} ✗")
       print(result.stderr, file=sys.stderr)
       return False
 
-    output_file_name = f"{resource}.{OUTPUT_FILE_TYPE}"
+    output_file_name = f"output.{OUTPUT_FILE_TYPE}"
 
-    if not os.path.exists(f"{self.path}/output"):
-      os.makedirs(f"{self.path}/output")
-
-    with open(f"{self.path}/output/{output_file_name}", 'w') as output_file:
+    with open(f"{self.path}/{output_file_name}", 'w') as output_file:
       output_file.write(result.stdout)
 
-    print(f"{resource} ✓")
+    print(f"{self.path} ✓")
 
     return True
-
-  @staticmethod
-  def _get_resource_type(resource) -> str:
-    # for strings that look like "resource_type-03", extract "resource_type"
-    matches = re.search(r'([^-\s]+)(-\d+)?', resource)
-
-    if not matches:
-      print(f"Could not determine resource type for {resource}")
-      print(f"{resource} ✗")
-      return ""
-
-    return matches.group(1)
-
-  def _generate_dhall(self) -> bool:
-    print("Dhall Resources:")
-
-    status = True
-
-    if not self._check_dhall_validity('resources'):
-      print(f"WARNING: no resources specified for {self.path}")
-      return True
-
-    for resource in self.dhall['resources']:
-      status = self._run_dhall(resource) and status
-
-    return status
 
   def _apply_dhall(self) -> bool:
     status = True
 
     result = subprocess.run(
-      ["kubectl", "apply", "-f", f"{self.path}/output"],
+      ["kubectl", "apply", "-f", f"{self.path}/output.yaml"],
       capture_output=True,
       text=True
     )
@@ -125,7 +69,7 @@ class Service:
     status = True
 
     result = subprocess.run(
-      ["kubectl", "delete", "-f", f"{self.path}/output"],
+      ["kubectl", "delete", "-f", f"{self.path}/output.yaml"],
       capture_output=True,
       text=True
     )

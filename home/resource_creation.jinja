@@ -1,7 +1,0 @@
-let values = {{ values }}
-
-let createResource = ./dhall/k8s/{{ resource_type }}/create.dhall
-
-let input = values.common // values.{{ resource }}
-
-in createResource input
